@@ -1,0 +1,254 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import AdaBoostClassifier
+import lightgbm as lgb
+import xgboost as xgb
+from sklearn.metrics import f1_score,precision_score,recall_score,roc_auc_score,accuracy_score,roc_curve,auc
+import matplotlib.pyplot as plt
+from sklearn.model_selection import GridSearchCV
+from sklearn import metrics
+from sklearn import tree
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import KFold
+from xgboost import plot_importance
+
+data = pd.read_csv('Aurod.csv',dtype=float,delimiter=',',header=None)
+data_norm = data.apply(lambda x: (x - np.min(x)) / (np.max(x) - np.min(x)))
+label_W = np.genfromtxt('Aurod_target.csv',dtype=float,delimiter=',')
+X_train, X_test, y_train, y_test = train_test_split(data_norm, label_W, test_size=0.2, random_state=1)
+
+##SVM
+param_grid_svm = {'gamma':[0.001,0.01,1,10,100],
+                'C':[0.001,0.01,1,10,100,200,400,600,800,1000,2000] 
+                  }
+svm = SVC(kernel='rbf',probability=True,random_state=2021)
+svm_grid_search = GridSearchCV(svm, param_grid_svm, cv=5,scoring='accuracy')
+svm_grid_search.fit(X_train,y_train)
+svm_best_parameters = svm_grid_search.best_params_
+svm = SVC(**svm_best_parameters)
+svm.fit(X_train,y_train)
+
+test_score = svm.score(X_test,y_test)
+print('Best parameters:{}'.format(svm_best_parameters))
+print('Best score on test set:{:.2f}'.format(test_score))
+
+##adaboost
+param_grid_ada = {'n_estimators':list(range(50, 400, 50)),
+                'learning_rate':[0.001,0.01,0.1,0.2,0.5,1]
+                  }
+ada = AdaBoostClassifier(DecisionTreeClassifier(max_depth=6),algorithm="SAMME",random_state=2021)
+ada_grid_search = GridSearchCV(ada, param_grid_ada, cv=5,
+                          scoring='accuracy')
+ada_grid_search.fit(X_train,y_train)
+ada_best_parameters = ada_grid_search.best_params_
+
+
+ada = AdaBoostClassifier(**ada_best_parameters)
+ada.fit(X_train,y_train)
+
+test_score = ada.score(X_test,y_test)
+print('Best parameters:{}'.format(ada_best_parameters))
+print('Best score on test set:{:.2f}'.format(test_score))
+
+##RF
+param_grid_rf = {
+    'n_estimators': list(range(50, 400, 50)),
+    'max_depth': list(range(3,10))
+    }
+rf = RandomForestClassifier(oob_score = 'TRUE',random_state=2021)
+rf_grid_search = GridSearchCV(rf, param_grid_rf, cv=5,scoring='neg_mean_squared_error')
+rf_grid_search.fit(X_train,y_train)
+rf_best_parameters = rf_grid_search.best_params_
+rf = RandomForestClassifier(**rf_best_parameters)
+rf.fit(X_train,y_train)
+
+test_score = rf.score(X_test,y_test)
+print('Best parameters:{}'.format(rf_best_parameters))
+print('Best score on test set:{:.2f}'.format(test_score))
+
+##DT
+param_grid_dt = {'max_depth': list(range(2,10)),
+                'criterion':['entropy','gini']
+                }
+dt = DecisionTreeClassifier(random_state=2021)
+dt_grid_search = GridSearchCV(dt, param_grid_dt, cv=5,
+                          scoring='accuracy')
+dt_grid_search.fit(X_train,y_train)
+dt_best_parameters = dt_grid_search.best_params_
+dt = DecisionTreeClassifier(**dt_best_parameters)
+dt.fit(X_train,y_train)
+
+test_score = dt.score(X_test,y_test)
+print('Best parameters:{}'.format(dt_best_parameters))
+print('Best score on test set:{:.2f}'.format(test_score))
+
+##GBDT
+param_grid_gbdt = {'n_estimators':list(range(100,600,50)),
+              'max_depth': list(range(3,10))
+            'learning_rate':[0.01,0.02,0.05,0.08,0.1,0.2,0.3]              
+          }
+gbdt = GradientBoostingClassifier(random_state=2021)
+gbdt_grid_search = GridSearchCV(gbdt, param_grid_gbdt, cv=5, scoring='accuracy')
+gbdt_grid_search.fit(X_train,y_train)
+gbdt_best_parameters = gbdt_grid_search.best_params_
+gbdt = GradientBoostingClassifier(**gbdt_best_parameters)
+gbdt.fit(X_train,y_train)
+
+test_score = gbdt.score(X_test,y_test)
+print('Best parameters:{}'.format(gbdt_best_parameters))
+print('Best score on test set:{:.2f}'.format(test_score))
+
+##GBM
+param_grid_gbm = {  'learning_rate':[0.01,0.02,0.05,0.08,0.1,0.2,0.3],
+            'max_depth': list(range(3,10)),
+            'num_leaves':list(range(10,200,10)), 
+            'feature_fraction': [0.5, 0.6, 0.7, 0.8, 0.9,1.0],
+             'bagging_fraction': [0.6, 0.7, 0.8, 0.9, 1.0],
+           'reg_alpha': [0, 0.001, 0.01, 0.03, 0.08, 0.3, 0.5],
+            'reg_lambda': [0, 0.001, 0.01, 0.03, 0.08, 0.3, 0.5],
+      }
+gbm = lgb.LGBMClassifier(objective = 'binary',
+                         metric = 'binary_logloss,auc',
+                         max_depth = 6,
+                         num_leaves = 60,
+                         learning_rate = 0.1,
+                         feature_fraction = 0.9,
+                         bagging_fraction = 0.8,                         
+                         reg_alpha = 0.001,
+                         reg_lambda = 8,
+                         cat_smooth = 0,
+                         num_iterations = 200, random_state=2021)
+gbm_grid_search = GridSearchCV(gbm, param_grid_gbm, cv=5,
+                          scoring='accuracy')
+gbm_grid_search.fit(X_train,y_train)
+gbm_best_parameters = gbm_grid_search.best_params_
+gbm = lgb.LGBMClassifier(**gbm_best_parameters)
+gbm.fit(X_train,y_train)
+
+test_score = gbm.score(X_test,y_test)
+print('Best parameters:{}'.format(gbm_best_parameters))
+print('Best score on test set:{:.2f}'.format(test_score))
+
+##kNN
+param_grid_knn = { 'n_neighbors': list(range(1,11))
+  
+                    }
+knn = KNeighborsClassifier()
+knn_grid_search = GridSearchCV(knn, param_grid_knn, cv=5,
+                          scoring='accuracy')
+knn_grid_search.fit(X_train,y_train)
+knn_best_parameters = knn_grid_search.best_params_
+knn = KNeighborsClassifier(**knn_best_parameters)
+knn.fit(X_train,y_train)
+test_score = knn.score(X_test,y_test)
+print('Best parameters:{}'.format(knn_best_parameters))
+print('Best score on test set:{:.2f}'.format(test_score))
+
+##LR
+lr=LogisticRegression(penalty='l2',max_iter=100,C=1.0,random_state=2021)
+lr.fit(X_train,y_train)
+lr_y_pre=lr.predict(X_test)
+lr_y_proba=lr.predict_proba(X_test)
+
+lr_accuracy_score=accuracy_score(y_test,lr_y_pre)
+lr_preci_score=precision_score(y_test,lr_y_pre)
+lr_recall_score=recall_score(y_test,lr_y_pre)
+lr_f1_score=f1_score(y_test,lr_y_pre)
+lr_auc=roc_auc_score(y_test,lr_y_proba[:,1])
+print('lr_accuracy_score: %f,lr_preci_score: %f,lr_recall_score: %f,lr_f1_score: %f,lr_auc: %f'
+      %(lr_accuracy_score,lr_preci_score,lr_recall_score,lr_f1_score,lr_auc))
+      
+##GNB
+gnb = GaussianNB()
+gnb.fit(X_train, y_train)
+gnb_y_pre=gnb.predict(X_test)
+gnb_y_proba=gnb.predict_proba(X_test)
+
+gnb_score = gnb.score(X_test, y_test)
+gnb_accuracy_score=accuracy_score(y_test,gnb_y_pre)
+gnb_preci_score=precision_score(y_test,gnb_y_pre)
+gnb_recall_score=recall_score(y_test,gnb_y_pre)
+gnb_f1_score=f1_score(y_test,gnb_y_pre)
+gnb_auc=roc_auc_score(y_test,gnb_y_proba[:,1])
+print('gnb_accuracy_score: %f,gnb_preci_score: %f,gnb_recall_score: %f,gnb_f1_score: %f,gnb_auc: %f'
+      %(gnb_accuracy_score,gnb_preci_score,gnb_recall_score,gnb_f1_score,gnb_auc))
+      
+##XGBoost
+param_grid_xgb = {
+        'max_depth':list(range(3,10,1)),
+        'learning_rate':[0.01,0.02,0.05,0.08,0.1,0.2,0.3]
+        'subsample':[0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0]
+        'colsample_bytree':[0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0]
+        'min_child_weight':range(0,9,1)
+        }
+xgb = xgb.XGBClassifier(max_depth=5,
+                        learning_rate=0.1,
+                        n_estimators=400,
+                        objective='binary:logistic',
+                        gamma=0,
+                        min_child_weight=1,
+                        max_delta_step=0,
+                        subsample=0.6,
+                        colsample_bytree=0.7,
+                        colsample_bylevel=1,
+                        reg_alpha=0,
+                        reg_lambda=1,
+                        scale_pos_weight=1,
+                        seed=2021)
+xgb_grid_search = GridSearchCV(xgb, param_grid_xgb, cv=5,
+                          scoring='accuracy')
+                          gbm_grid_search.fit(X_train,y_train)
+xgb_best_parameters = xgb_grid_search.best_params_
+xgb = xgb.XGBClassifier(**xgb_best_parameters)
+xgb.fit(X_train,y_train)
+
+test_score = xgb.score(X_test,y_test)
+print('Best parameters:{}'.format(xgb_best_parameters))
+print('Best score on test set:{:.2f}'.format(test_score))
+
+##XGBoost modeling building
+dtrain=xgb.DMatrix(train_x,label=train_y)
+dtest=xgb.DMatrix(test_x,label=test_y)
+params={'booster':'gbtree',
+    'objective': 'binary:logistic',
+    'eval_metric': 'error',
+     'min_child_weight':0,
+    'max_depth':5,
+    'lambda':0.1,
+        'alpha':0.02,
+        'gamma': 0.1,
+    'subsample':0.75,
+    'colsample_bytree':0.6,
+          'colsample_bylevel':0.5,
+        'max_delta_step':1,    
+    'eta': 0.02,
+    'seed':0,
+    'nthread':8,
+        'scale_pos_weight':2.5
+       }
+res = xgb.cv(params,dtrain,num_boost_round=2000,metrics='logloss',early_stopping_rounds=25,nfold=5,seed=0)
+best_nround = res.shape[0] - 1
+
+watchlist = [(dtrain,'train'),(dtest,'test')]
+bst=xgb.train(params,dtrain,num_boost_round=best_nround,evals=watchlist)
+ypred=bst.predict(dtest)
+ypred2=bst.predict(dtrain)
+y_pred = (ypred >= 0.5)*1
+
+print ('AUC(train): %.4f' % metrics.roc_auc_score(train_y,ypred2))
+print('best_nround:',best_nround)
+print ('AUC: %.4f' % metrics.roc_auc_score(test_y,ypred))
+print ('ACC: %.4f' % metrics.accuracy_score(test_y,y_pred))
+print ('Recall: %.4f' % metrics.recall_score(test_y,y_pred))
+print ('F1-score: %.4f' %metrics.f1_score(test_y,y_pred))
+print ('Precesion: %.4f' %metrics.precision_score(test_y,y_pred))
+print('Log_loss: %f'%metrics.log_loss(test_y,y_pred))
+print(metrics.confusion_matrix(test_y,y_pred))
