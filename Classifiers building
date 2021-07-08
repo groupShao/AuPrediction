@@ -41,7 +41,7 @@ print('Best parameters:{}'.format(svm_best_parameters))
 print('Best score on test set:{:.2f}'.format(test_score))
 
 ##adaboost
-param_grid_ada = {'n_estimators':list(range(50, 450, 50)),
+param_grid_ada = {'n_estimators':list(range(50, 500, 50)),
                 'learning_rate':[0.001,0.01,0.1,0.2,0.5,1]
                   }
 ada = AdaBoostClassifier(DecisionTreeClassifier(max_depth=6),algorithm="SAMME",random_state=2021)
@@ -90,7 +90,7 @@ print('Best score on test set:{:.2f}'.format(test_score))
 
 ##GBDT
 param_grid_gbdt = {'n_estimators':list(range(100,600,50)),
-              'max_depth': list(range(3,10))
+              'max_depth': list(range(3,10)),
             'learning_rate':[0.01,0.02,0.05,0.08,0.1,0.2,0.3]              
           }
 gbdt = GradientBoostingClassifier(random_state=2021)
