@@ -41,7 +41,7 @@ print('Best parameters:{}'.format(svm_best_parameters))
 print('Best score on test set:{:.2f}'.format(test_score))
 
 ##adaboost
-param_grid_ada = {'n_estimators':list(range(50, 400, 50)),
+param_grid_ada = {'n_estimators':list(range(50, 450, 50)),
                 'learning_rate':[0.001,0.01,0.1,0.2,0.5,1]
                   }
 ada = AdaBoostClassifier(DecisionTreeClassifier(max_depth=6),algorithm="SAMME",random_state=2021)
@@ -49,8 +49,6 @@ ada_grid_search = GridSearchCV(ada, param_grid_ada, cv=5,
                           scoring='accuracy')
 ada_grid_search.fit(X_train,y_train)
 ada_best_parameters = ada_grid_search.best_params_
-
-
 ada = AdaBoostClassifier(**ada_best_parameters)
 ada.fit(X_train,y_train)
 
@@ -60,7 +58,7 @@ print('Best score on test set:{:.2f}'.format(test_score))
 
 ##RF
 param_grid_rf = {
-    'n_estimators': list(range(50, 400, 50)),
+    'n_estimators': list(range(50, 500, 50)),
     'max_depth': list(range(3,10))
     }
 rf = RandomForestClassifier(oob_score = 'TRUE',random_state=2021)
@@ -113,7 +111,7 @@ param_grid_gbm = {  'learning_rate':[0.01,0.02,0.05,0.08,0.1,0.2,0.3],
             'feature_fraction': [0.5, 0.6, 0.7, 0.8, 0.9,1.0],
              'bagging_fraction': [0.6, 0.7, 0.8, 0.9, 1.0],
            'reg_alpha': [0, 0.001, 0.01, 0.03, 0.08, 0.3, 0.5],
-            'reg_lambda': [0, 0.001, 0.01, 0.03, 0.08, 0.3, 0.5],
+            'reg_lambda': [0, 0.001, 0.01, 0.03, 0.08, 0.3, 0.5]
       }
 gbm = lgb.LGBMClassifier(objective = 'binary',
                          metric = 'binary_logloss,auc',
@@ -139,7 +137,6 @@ print('Best score on test set:{:.2f}'.format(test_score))
 
 ##kNN
 param_grid_knn = { 'n_neighbors': list(range(1,11))
-  
                     }
 knn = KNeighborsClassifier()
 knn_grid_search = GridSearchCV(knn, param_grid_knn, cv=5,
@@ -166,28 +163,13 @@ lr_auc=roc_auc_score(y_test,lr_y_proba[:,1])
 print('lr_accuracy_score: %f,lr_preci_score: %f,lr_recall_score: %f,lr_f1_score: %f,lr_auc: %f'
       %(lr_accuracy_score,lr_preci_score,lr_recall_score,lr_f1_score,lr_auc))
       
-##GNB
-gnb = GaussianNB()
-gnb.fit(X_train, y_train)
-gnb_y_pre=gnb.predict(X_test)
-gnb_y_proba=gnb.predict_proba(X_test)
-
-gnb_score = gnb.score(X_test, y_test)
-gnb_accuracy_score=accuracy_score(y_test,gnb_y_pre)
-gnb_preci_score=precision_score(y_test,gnb_y_pre)
-gnb_recall_score=recall_score(y_test,gnb_y_pre)
-gnb_f1_score=f1_score(y_test,gnb_y_pre)
-gnb_auc=roc_auc_score(y_test,gnb_y_proba[:,1])
-print('gnb_accuracy_score: %f,gnb_preci_score: %f,gnb_recall_score: %f,gnb_f1_score: %f,gnb_auc: %f'
-      %(gnb_accuracy_score,gnb_preci_score,gnb_recall_score,gnb_f1_score,gnb_auc))
-      
 ##XGBoost
 param_grid_xgb = {
-        'max_depth':list(range(3,10,1)),
-        'learning_rate':[0.01,0.02,0.05,0.08,0.1,0.2,0.3]
-        'subsample':[0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0]
-        'colsample_bytree':[0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0]
-        'min_child_weight':range(0,9,1)
+        'max_depth':list(range(3,10)),
+        'learning_rate':[0.01,0.02,0.05,0.08,0.1,0.2,0.3],
+        'subsample':[0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0],
+        'colsample_bytree':[0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0],
+        'min_child_weight':list(range(0,9))
         }
 xgb = xgb.XGBClassifier(max_depth=5,
                         learning_rate=0.1,
