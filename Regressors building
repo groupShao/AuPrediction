@@ -1,0 +1,52 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+import xgboost as xgb
+from xgboost import XGBRegressor
+import matplotlib.pyplot as plt
+from sklearn import metrics
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import KFold
+from xgboost import plot_importance
+from sklearn import tree
+
+data = pd.read_csv('Aurod.csv',dtype=float,delimiter=',',header=None)
+label_W = np.genfromtxt('Aurod_target.csv',dtype=float,delimiter=',')
+X_train, X_test, y_train, y_test = train_test_split(data_norm, label_W, test_size=0.2, random_state=1)
+
+param_grid_xgb = {
+        'max_depth':list(range(3,10)),
+        'learning_rate':[0.01,0.02,0.05,0.08,0.1,0.2,0.3],
+        'subsample':[0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0],
+        'colsample_bytree':[0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0],
+        'min_child_weight':list(range(0,9))
+        }
+xgb = xgb.XGBRegressor(max_depth=5,
+                        learning_rate=0.1,
+                        n_estimators=400,
+                        objective='reg:squarederror',
+                        gamma=0,
+                        min_child_weight=1,
+                        max_delta_step=0,
+                        subsample=0.6,
+                        colsample_bytree=0.7,
+                        colsample_bylevel=1,
+                        reg_alpha=0,
+                        reg_lambda=1,
+                        scale_pos_weight=1,
+                        seed=2021)
+xgb_grid_search = GridSearchCV(xgb, param_grid_xgb, cv=5,
+                          scoring='r2')
+xgb_grid_search.fit(X_train,y_train)
+xgb_best_parameters = xgb_grid_search.best_params_
+xgb = xgb.XGBRegressor(**xgb_best_parameters)
+xgb.fit(X_train,y_train)
+
+test_score = xgb.score(X_test,y_test)
+print('Best parameters:{}'.format(xgb_best_parameters))
+print('Best score on test set:{:.2f}'.format(test_score))
+
+ypred=xgb.predict(dtest)
+ypred2=xgb.predict(dtrain)
+print('train_r2_score:%f'%metrics.r2_score(y_train,ypred2))
+print('r2_score:%f'%metrics.r2_score(y_test,ypred))
