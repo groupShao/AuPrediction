@@ -12,7 +12,7 @@ from sklearn import tree
 
 data = pd.read_csv('Aurod.csv',dtype=float,delimiter=',',header=None)
 label_W = np.genfromtxt('Aurod_target.csv',dtype=float,delimiter=',')
-X_train, X_test, y_train, y_test = train_test_split(data, label_W, test_size=0.2, random_state=2021)
+X_train, X_test, y_train, y_test = train_test_split(data, label_W, test_size=0.2)
 
 param_grid_xgb = {
         'max_depth':list(range(3,10)),
