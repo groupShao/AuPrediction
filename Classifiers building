@@ -24,7 +24,7 @@ from xgboost import plot_importance
 data = pd.read_csv('Aurod.csv',dtype=float,delimiter=',',header=None)
 data_norm = data.apply(lambda x: (x - np.min(x)) / (np.max(x) - np.min(x)))
 label_W = np.genfromtxt('Aurod_target.csv',dtype=float,delimiter=',')
-X_train, X_test, y_train, y_test = train_test_split(data_norm, label_W, test_size=0.2, random_state=1)
+X_train, X_test, y_train, y_test = train_test_split(data_norm, label_W, test_size=0.2)
 
 ##SVM
 param_grid_svm = {'gamma':[0.001,0.01,1,10,100],
