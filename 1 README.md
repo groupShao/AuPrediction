@@ -26,4 +26,3 @@ f18：the amount of sodium hydroxide (NaOH) in the growth solution
 
 W<sub>LSPR</sub>：longitudinal surface plasmon resonance absorption peak wavelength  
 A<sub>LSPR</sub>/A<sub>TSPR</sub>：the ratio between the maximum absorbance of the longitudinal and transverse SPR bands  
- 
